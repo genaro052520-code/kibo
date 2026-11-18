@@ -583,7 +583,29 @@ def listar_unidades():
     except Exception as e:
         return jsonify({"error": "Error interno", "detalle": detalle(e)}), 500
 
+def hogar_de_parametro():
+    """Lee ?hogar=ID. Devuelve (id_hogar, None), (None, None) si no viene, o (None, error)."""
+    if "hogar" not in request.args:
+        return None, None
+    id_hogar = request.args.get("hogar", type=int)
+    if id_hogar is None:
+        return None, (jsonify({"error": "hogar debe ser un número"}), 400)
+    if not db.session.get(Hogar, id_hogar):
+        return None, (jsonify({"error": "Hogar no encontrado"}), 404)
+    if not es_miembro(id_hogar, usuario_actual()):
+        return None, (jsonify({"error": "No perteneces a este hogar"}), 403)
+    return id_hogar, None
 
+
+def productos_visibles(id_hogar=None):
+    """Globales + personalizados del hogar indicado (o de todos los hogares del usuario)."""
+    if id_hogar is not None:
+        ids = [id_hogar]
+    else:
+        ids = [m.id_hogar for m in
+               HogarMiembro.query.filter_by(id_usuario=usuario_actual()).all()]
+    return Producto.query.filter(
+        or_(Producto.id_hogar.is_(None), Producto.id_hogar.in_(ids)))
 @app.route("/api/productos", methods=["GET"])
 @jwt_required()
 def listar_productos():

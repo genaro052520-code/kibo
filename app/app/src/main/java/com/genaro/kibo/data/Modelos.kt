@@ -33,3 +33,31 @@ data class InventarioResponse(
     val total: Int,
     val inventario: List<ItemDto>
 )
+data class CategoriaDto(val id_categoria: Int, val nombre: String)
+
+data class UnidadDto(val id_unidad: Int, val nombre: String, val abreviatura: String)
+
+data class ProductoDto(
+    val id_producto: Int,
+    val nombre: String,
+    val id_categoria: Int,
+    val categoria: String,
+    val dias_vida_util: Int,
+    val personalizado: Boolean,
+    val id_hogar: Int?
+)
+
+data class CatalogoResponse(
+    val categorias: List<CategoriaDto>,
+    val unidades: List<UnidadDto>,
+    val productos: List<ProductoDto>
+)
+
+data class NuevoItemRequest(val id_producto: Int, val id_unidad: Int, val cantidad: Double)
+
+data class NuevoItemResponse(
+    val mensaje: String,
+    val id_item: Int,
+    val producto: String,
+    val fecha_caducidad: String
+)

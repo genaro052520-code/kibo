@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -34,83 +35,100 @@ fun InventarioScreen(vm: AppViewModel) {
     val visibles = if (filtroActivo == "Todos") vm.inventario
     else vm.inventario.filter { it.categoria == filtroActivo }
 
-    Column(
+    Box(
         Modifier
             .fillMaxSize()
             .background(Color.White)
             .systemBarsPadding()
     ) {
-        // ---------- Encabezado ----------
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text("K.I.B.O.", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold,
-                    color = KiboPurple)
-                Text("Inventario", fontSize = 24.sp, fontWeight = FontWeight.Bold,
-                    color = KiboPurple)
-            }
-            IconButton(onClick = { /* búsqueda: más adelante */ }) {
-                Icon(Icons.Default.Search, contentDescription = "Buscar",
-                    tint = KiboDarkGreen, modifier = Modifier.size(30.dp))
-            }
-            Box {
-                IconButton(onClick = { menuAbierto = true }) {
-                    Icon(Icons.Default.Settings, contentDescription = "Opciones",
+        Column(Modifier.fillMaxSize()) {
+            // ---------- Encabezado ----------
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("K.I.B.O.", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold,
+                        color = KiboPurple)
+                    Text("Inventario", fontSize = 24.sp, fontWeight = FontWeight.Bold,
+                        color = KiboPurple)
+                }
+                IconButton(onClick = { /* búsqueda: más adelante */ }) {
+                    Icon(Icons.Default.Search, contentDescription = "Buscar",
                         tint = KiboDarkGreen, modifier = Modifier.size(30.dp))
                 }
-                DropdownMenu(expanded = menuAbierto, onDismissRequest = { menuAbierto = false }) {
-                    DropdownMenuItem(
-                        text = { Text("Recargar") },
-                        onClick = { menuAbierto = false; vm.recargar() }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Salir") },
-                        onClick = { menuAbierto = false; vm.salir() }
-                    )
+                Box {
+                    IconButton(onClick = { menuAbierto = true }) {
+                        Icon(Icons.Default.Settings, contentDescription = "Opciones",
+                            tint = KiboDarkGreen, modifier = Modifier.size(30.dp))
+                    }
+                    DropdownMenu(expanded = menuAbierto, onDismissRequest = { menuAbierto = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Recargar") },
+                            onClick = { menuAbierto = false; vm.recargar() }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Salir") },
+                            onClick = { menuAbierto = false; vm.salir() }
+                        )
+                    }
+                }
+            }
+
+            // ---------- Chips de categoría ----------
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(categorias) { cat ->
+                    ChipCategoria(cat, cat == filtroActivo) { filtro = cat }
+                }
+            }
+
+            if (vm.cargando) LinearProgressIndicator(Modifier.fillMaxWidth(), color = KiboGreen)
+            vm.error?.let {
+                Text(it, color = AvisoRojo,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+            }
+
+            // ---------- Lista ----------
+            if (visibles.isEmpty() && !vm.cargando) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No hay alimentos en esta categoría",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(
+                        start = 20.dp, end = 20.dp, top = 8.dp, bottom = 100.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    items(visibles, key = { it.id_item }) { TarjetaAlimento(it) }
                 }
             }
         }
 
-        // ---------- Chips de categoría ----------
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        // ---------- Botón + ----------
+        FloatingActionButton(
+            onClick = { vm.abrirAgregar() },
+            containerColor = KiboGreen,
+            contentColor = Color.White,
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(20.dp)
         ) {
-            items(categorias) { cat ->
-                ChipCategoria(cat, cat == filtroActivo) { filtro = cat }
-            }
-        }
-
-        if (vm.cargando) LinearProgressIndicator(
-            Modifier.fillMaxWidth(), color = KiboGreen
-        )
-        vm.error?.let {
-            Text(it, color = AvisoRojo, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
-        }
-
-        // ---------- Lista ----------
-        if (visibles.isEmpty() && !vm.cargando) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No hay alimentos en esta categoría",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        } else {
-            LazyColumn(
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(visibles, key = { it.id_item }) { TarjetaAlimento(it) }
-            }
+            Icon(Icons.Default.Add, contentDescription = "Agregar alimento",
+                modifier = Modifier.size(32.dp))
         }
     }
 }
 
 @Composable
-private fun ChipCategoria(texto: String, seleccionado: Boolean, onClick: () -> Unit) {
+fun ChipCategoria(texto: String, seleccionado: Boolean, onClick: () -> Unit) {
     val forma = RoundedCornerShape(50)
     Box(
         Modifier
@@ -156,7 +174,6 @@ fun TarjetaAlimento(item: ItemDto) {
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            // Mientras no haya fotos: emoji sobre un recuadro redondeado
             Box(
                 Modifier
                     .size(84.dp)
