@@ -1,4 +1,4 @@
-package com.genaro.kibo.ui.theme
+package com.genaro.kibo.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
