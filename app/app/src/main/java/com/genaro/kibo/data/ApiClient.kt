@@ -9,18 +9,28 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import java.util.concurrent.TimeUnit
+import retrofit2.http.Query
 interface ApiService {
     @POST("api/login")
     suspend fun login(@Body body: LoginRequest): LoginResponse
 
     @GET("api/hogares/{id}/inventario")
     suspend fun inventario(@Path("id") idHogar: Int): InventarioResponse
+
+    @GET("api/catalogo")
+    suspend fun catalogo(@Query("hogar") idHogar: Int): CatalogoResponse
+
+    @POST("api/hogares/{id}/inventario")
+    suspend fun agregarItem(
+        @Path("id") idHogar: Int,
+        @Body body: NuevoItemRequest
+    ): NuevoItemResponse
 }
 
 object ApiClient {
     // 10.0.2.2 = tu PC visto desde el emulador de Android.
     // Con celular físico, cámbialo por http://IP_DE_TU_PC:8000/
-    const val BASE_URL = "http://192.168.0.31:8000/"
+    const val BASE_URL = "http://10.0.2.2:8000/"
 
     var token: String? = null
 
