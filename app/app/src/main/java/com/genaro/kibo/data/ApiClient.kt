@@ -1,6 +1,6 @@
 package com.genaro.kibo.data
 
-
+import com.genaro.kibo.BuildConfig
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -30,7 +30,7 @@ interface ApiService {
 object ApiClient {
     // 10.0.2.2 = tu PC visto desde el emulador de Android.
     // Con celular físico, cámbialo por http://IP_DE_TU_PC:8000/
-    const val BASE_URL = "http://10.0.2.2:8000/"
+    const val BASE_URL = BuildConfig.BASE_URL
 
     var token: String? = null
 
