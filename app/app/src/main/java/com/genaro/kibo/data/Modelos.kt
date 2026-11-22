@@ -17,6 +17,22 @@ data class LoginResponse(
     val hogares: List<HogarDto>
 )
 
+data class RegistroRequest(
+    val nombre: String,
+    val email: String,
+    val password: String,
+    val codigo_invitacion: String? = null
+)
+
+data class RegistroResponse(
+    val mensaje: String,
+    val id_usuario: Int,
+    val id_hogar: Int,
+    val rol: String,
+    val plan: String,
+    val access_token: String
+)
+
 data class ItemDto(
     val id_item: Int,
     val producto: String,

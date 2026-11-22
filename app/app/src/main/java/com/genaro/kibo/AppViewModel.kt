@@ -1,22 +1,33 @@
 package com.genaro.kibo
 
+import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.genaro.kibo.data.ApiClient
 import com.genaro.kibo.data.CatalogoResponse
+import com.genaro.kibo.data.HogarDto
 import com.genaro.kibo.data.ItemDto
 import com.genaro.kibo.data.LoginRequest
 import com.genaro.kibo.data.LoginResponse
 import com.genaro.kibo.data.NuevoItemRequest
+import com.genaro.kibo.data.RegistroRequest
+import com.genaro.kibo.data.SessionStore
+import com.genaro.kibo.data.UsuarioDto
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import retrofit2.HttpException
 import java.io.IOException
 
-class AppViewModel : ViewModel() {
+class AppViewModel(app: Application) : AndroidViewModel(app) {
+
+    private val sessionStore = SessionStore(app)
+
+    init {
+        restaurarSesion()
+    }
 
     var cargando by mutableStateOf(false)
         private set
@@ -26,6 +37,24 @@ class AppViewModel : ViewModel() {
         private set
     var inventario by mutableStateOf<List<ItemDto>>(emptyList())
         private set
+    var inventarioCargado by mutableStateOf(false)
+        private set
+    var sinConexion by mutableStateOf(false)
+        private set
+    var restaurandoSesion by mutableStateOf(true)
+        private set
+
+    // ----- Pantalla de registro -----
+    var cargandoRegistro by mutableStateOf(false)
+        private set
+    var errorRegistro by mutableStateOf<String?>(null)
+        private set
+    var mostrandoRegistro by mutableStateOf(false)
+        private set
+//agrego esto jaz
+    var pantallaActual by mutableStateOf("inicio")
+        private set
+
 
     // ----- Pantalla "Agregar alimento" -----
     var catalogo by mutableStateOf<CatalogoResponse?>(null)
@@ -36,6 +65,50 @@ class AppViewModel : ViewModel() {
         private set
     var errorAgregar by mutableStateOf<String?>(null)
         private set
+    //agrego esto jaz
+    fun cambiarPantalla(nuevaPantalla: String) {
+        pantallaActual = nuevaPantalla
+    }
+    private fun restaurarSesion() {
+        viewModelScope.launch {
+            val guardada = sessionStore.leerSesion()
+            if (guardada != null) {
+                ApiClient.token = guardada.access_token
+                sesion = guardada
+                guardada.hogares.firstOrNull()?.let { hogar ->
+                    sessionStore.leerInventario(hogar.id_hogar)?.let { cache ->
+                        inventario = cache
+                        inventarioCargado = true
+                    }
+                }
+                try {
+                    traerInventario()
+                } catch (e: Exception) {
+                    if (esNoAutorizado(e)) {
+                        limpiarSesionLocal()
+                    } else if (!esSinRed(e)) {
+                        error = mensaje(e)
+                    }
+                }
+            }
+            restaurandoSesion = false
+        }
+    }
+
+    private suspend fun limpiarSesionLocal() {
+        val hogarId = sesion?.hogares?.firstOrNull()?.id_hogar
+        sessionStore.limpiarSesion()
+        if (hogarId != null) sessionStore.limpiarInventario(hogarId)
+        ApiClient.token = null
+        sesion = null
+        inventario = emptyList()
+        inventarioCargado = false
+        sinConexion = false
+        error = null
+    }
+
+    private fun esSinRed(e: Exception) = e is IOException
+    private fun esNoAutorizado(e: Exception) = e is HttpException && e.code() == 401
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
@@ -45,11 +118,58 @@ class AppViewModel : ViewModel() {
                 val r = ApiClient.api.login(LoginRequest(email, password))
                 ApiClient.token = r.access_token
                 sesion = r
+                sessionStore.guardarSesion(r)
                 traerInventario()
             } catch (e: Exception) {
                 error = mensaje(e)
             }
             cargando = false
+        }
+    }
+
+    // ----- Registro -----
+    fun abrirRegistro() {
+        errorRegistro = null
+        mostrandoRegistro = true
+    }
+
+    fun cerrarRegistro() {
+        mostrandoRegistro = false
+        errorRegistro = null
+    }
+
+    fun registrar(
+        nombre: String,
+        email: String,
+        password: String,
+        codigoInvitacion: String?
+    ) {
+        viewModelScope.launch {
+            cargandoRegistro = true
+            errorRegistro = null
+            try {
+                val r = ApiClient.api.registrar(
+                    RegistroRequest(
+                        nombre = nombre,
+                        email = email,
+                        password = password,
+                        codigo_invitacion = codigoInvitacion?.takeIf { it.isNotBlank() }
+                    )
+                )
+                ApiClient.token = r.access_token
+                val nueva = LoginResponse(
+                    access_token = r.access_token,
+                    usuario = UsuarioDto(r.id_usuario, nombre, email, r.plan),
+                    hogares = listOf(HogarDto(r.id_hogar, r.rol))
+                )
+                sesion = nueva
+                sessionStore.guardarSesion(nueva)
+                mostrandoRegistro = false
+                traerInventario()
+            } catch (e: Exception) {
+                errorRegistro = mensaje(e)
+            }
+            cargandoRegistro = false
         }
     }
 
@@ -60,20 +180,29 @@ class AppViewModel : ViewModel() {
             try {
                 traerInventario()
             } catch (e: Exception) {
-                error = mensaje(e)
+                if (!esSinRed(e)) error = mensaje(e)
             }
             cargando = false
         }
     }
 
     fun salir() {
+        val hogarId = sesion?.hogares?.firstOrNull()?.id_hogar
         ApiClient.token = null
         sesion = null
         inventario = emptyList()
+        inventarioCargado = false
+        sinConexion = false
         catalogo = null
         mostrandoAgregar = false
         error = null
         errorAgregar = null
+        mostrandoRegistro = false
+        errorRegistro = null
+        viewModelScope.launch {
+            sessionStore.limpiarSesion()
+            if (hogarId != null) sessionStore.limpiarInventario(hogarId)
+        }
     }
 
     // ----- Agregar alimento -----
@@ -121,7 +250,21 @@ class AppViewModel : ViewModel() {
     private suspend fun traerInventario() {
         val hogar = sesion?.hogares?.firstOrNull()
             ?: throw IllegalStateException("Tu usuario no pertenece a ningún hogar")
-        inventario = ApiClient.api.inventario(hogar.id_hogar).inventario
+        try {
+            val items = ApiClient.api.inventario(hogar.id_hogar).inventario
+            inventario = items
+            inventarioCargado = true
+            sinConexion = false
+            sessionStore.guardarInventario(hogar.id_hogar, items)
+        } catch (e: IOException) {
+            val cache = sessionStore.leerInventario(hogar.id_hogar)
+            if (cache != null) {
+                inventario = cache
+                inventarioCargado = true
+            }
+            sinConexion = true
+            throw e
+        }
     }
 
     private fun mensaje(e: Exception): String = when (e) {

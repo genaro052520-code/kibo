@@ -92,12 +92,23 @@ fun InventarioScreen(vm: AppViewModel) {
                 Text(it, color = AvisoRojo,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
             }
+            if (vm.sinConexion && vm.inventarioCargado) {
+                Text("Sin conexión: mostrando datos guardados", color = AvisoNaranja,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+            }
 
             // ---------- Lista ----------
             if (visibles.isEmpty() && !vm.cargando) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No hay alimentos en esta categoría",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        when {
+                            !vm.inventarioCargado && vm.sinConexion ->
+                                "Sin conexión. Conéctate para cargar tu inventario"
+                            !vm.inventarioCargado -> "Cargando inventario..."
+                            else -> "No hay alimentos en esta categoría"
+                        },
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             } else {
                 LazyColumn(

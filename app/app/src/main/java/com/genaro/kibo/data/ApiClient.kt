@@ -14,6 +14,9 @@ interface ApiService {
     @POST("api/login")
     suspend fun login(@Body body: LoginRequest): LoginResponse
 
+    @POST("api/usuarios")
+    suspend fun registrar(@Body body: RegistroRequest): RegistroResponse
+
     @GET("api/hogares/{id}/inventario")
     suspend fun inventario(@Path("id") idHogar: Int): InventarioResponse
 
