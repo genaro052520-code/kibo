@@ -740,4 +740,4 @@ def eliminar_producto_personalizado(id_hogar, id_producto):
         return jsonify({"error": "Error interno", "detalle": detalle(e)}), 500
 
 if __name__ == "__main__":
-    app.run(debug=DEBUG, port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)

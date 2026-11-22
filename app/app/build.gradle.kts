@@ -23,8 +23,8 @@ android {
         versionCode = 1
         versionName = "1.0"
         buildConfigField(
-            "String", "BASE_URL",
-            "\"${localProps.getProperty("api.url", "http://10.0.2.2:8000/")}\""
+            type = "String", name = "BASE_URL",
+            value = "\"${localProps.getProperty("KIBO_BASE_URL", "http://10.0.2.2:5000/")}\""
         )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -67,6 +67,7 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.compose.material:material-icons-extended")
 }
