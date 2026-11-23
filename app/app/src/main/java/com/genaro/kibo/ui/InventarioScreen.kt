@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -117,7 +118,13 @@ fun InventarioScreen(vm: AppViewModel) {
                     ),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    items(visibles, key = { it.id_item }) { TarjetaAlimento(it) }
+                    items(visibles, key = { it.id_item }) { item ->
+                        TarjetaAlimento(
+                            item,
+                            onConsumido = { vm.cambiarEstado(item.id_item, "consumido") },
+                            onDesechado = { vm.cambiarEstado(item.id_item, "desechado") }
+                        )
+                    }
                 }
             }
         }
@@ -167,7 +174,12 @@ private fun emojiDe(categoria: String) = when (categoria) {
 }
 
 @Composable
-fun TarjetaAlimento(item: ItemDto) {
+fun TarjetaAlimento(
+    item: ItemDto,
+    onConsumido: () -> Unit = {},
+    onDesechado: () -> Unit = {}
+) {
+    var menu by remember { mutableStateOf(false) }
     val (texto, color) = when {
         item.dias_restantes < 0 -> "⛔ Caducado" to AvisoRojo
         item.dias_restantes == 0 -> "🚨 Caduca hoy" to AvisoRojo
@@ -211,6 +223,22 @@ fun TarjetaAlimento(item: ItemDto) {
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                    )
+                }
+            }
+            Box {
+                IconButton(onClick = { menu = true }) {
+                    Icon(Icons.Default.MoreVert, contentDescription = "Opciones",
+                        tint = KiboPurple)
+                }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    DropdownMenuItem(
+                        text = { Text("✅ Lo consumí") },
+                        onClick = { menu = false; onConsumido() }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("🗑️ Lo desecché") },
+                        onClick = { menu = false; onDesechado() }
                     )
                 }
             }
