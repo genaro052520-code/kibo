@@ -77,3 +77,12 @@ data class NuevoItemResponse(
     val producto: String,
     val fecha_caducidad: String
 )
+data class ActualizarItemRequest(val estado: String)
+
+data class ActualizarItemResponse(
+    val mensaje: String,
+    val id_item: Int,
+    val estado: String,
+    val cantidad: Double,
+    val fecha_caducidad: String
+)

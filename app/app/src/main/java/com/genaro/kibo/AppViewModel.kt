@@ -13,6 +13,7 @@ import com.genaro.kibo.data.ItemDto
 import com.genaro.kibo.data.LoginRequest
 import com.genaro.kibo.data.LoginResponse
 import com.genaro.kibo.data.NuevoItemRequest
+import com.genaro.kibo.data.ActualizarItemRequest
 import com.genaro.kibo.data.RegistroRequest
 import com.genaro.kibo.data.SessionStore
 import com.genaro.kibo.data.UsuarioDto
@@ -244,6 +245,23 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 errorAgregar = mensaje(e)
             }
             guardando = false
+        }
+    }
+    // ----- Consumir / desechar -----
+    fun cambiarEstado(idItem: Int, estado: String) {
+        viewModelScope.launch {
+            error = null
+            try {
+                val hogar = sesion?.hogares?.firstOrNull()
+                    ?: throw IllegalStateException("Tu usuario no pertenece a ningún hogar")
+                ApiClient.api.actualizarItem(
+                    hogar.id_hogar, idItem, ActualizarItemRequest(estado)
+                )
+                inventario = inventario.filter { it.id_item != idItem }
+                sessionStore.guardarInventario(hogar.id_hogar, inventario)
+            } catch (e: Exception) {
+                error = mensaje(e)
+            }
         }
     }
 
