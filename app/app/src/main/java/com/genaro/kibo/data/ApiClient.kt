@@ -57,10 +57,12 @@ object ApiClient {
         }
         .build()
 
-    val api: ApiService = Retrofit.Builder()
+    private val retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)
         .client(http)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
-        .create(ApiService::class.java)
+
+    val api: ApiService = retrofit.create(ApiService::class.java)
+    val cuentaApi: CuentaApi = retrofit.create(CuentaApi::class.java)
 }
