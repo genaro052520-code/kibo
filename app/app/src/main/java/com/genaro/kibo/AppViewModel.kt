@@ -17,6 +17,7 @@ import com.genaro.kibo.data.ActualizarItemRequest
 import com.genaro.kibo.data.RegistroRequest
 import com.genaro.kibo.data.SessionStore
 import com.genaro.kibo.data.UsuarioDto
+import com.genaro.kibo.data.EstadisticasResponse
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import retrofit2.HttpException
@@ -103,6 +104,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         ApiClient.token = null
         sesion = null
         inventario = emptyList()
+        estadisticas = null
         inventarioCargado = false
         sinConexion = false
         error = null
@@ -192,6 +194,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         ApiClient.token = null
         sesion = null
         inventario = emptyList()
+        estadisticas = null
         inventarioCargado = false
         sinConexion = false
         catalogo = null
@@ -245,6 +248,29 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 errorAgregar = mensaje(e)
             }
             guardando = false
+        }
+    }
+    // ----- Estadísticas (pantalla Inicio) -----
+    var estadisticas by mutableStateOf<EstadisticasResponse?>(null)
+        private set
+    var cargandoEstadisticas by mutableStateOf(false)
+        private set
+    var errorEstadisticas by mutableStateOf<String?>(null)
+        private set
+
+    fun cargarEstadisticas() {
+        viewModelScope.launch {
+            val hogar = sesion?.hogares?.firstOrNull() ?: return@launch
+            cargandoEstadisticas = true
+            errorEstadisticas = null
+            try {
+                estadisticas = ApiClient.cuentaApi.estadisticas(hogar.id_hogar)
+            } catch (e: Exception) {
+                errorEstadisticas = if (e is IOException)
+                    "Sin conexión: no se pudieron actualizar las estadísticas"
+                else mensaje(e)
+            }
+            cargandoEstadisticas = false
         }
     }
     // ----- Consumir / desechar -----
