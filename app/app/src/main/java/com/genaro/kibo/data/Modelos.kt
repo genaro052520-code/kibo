@@ -89,3 +89,16 @@ data class ActualizarItemResponse(
 data class EditarItemRequest(val cantidad: Double, val fecha_caducidad: String)
 
 data class EliminarItemResponse(val mensaje: String, val id_item: Int)
+data class BuscarResponse(
+    val total: Int,
+    val seguro: Boolean,
+    val coincidencias: List<ProductoDto>
+)
+
+data class NuevoProductoRequest(
+    val nombre: String,
+    val id_categoria: Int,
+    val dias_vida_util: Int
+)
+
+data class NuevoProductoResponse(val mensaje: String, val producto: ProductoDto)
