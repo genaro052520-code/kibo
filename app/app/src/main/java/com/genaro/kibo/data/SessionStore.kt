@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.datastore.preferences.core.intPreferencesKey
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.first
@@ -16,6 +17,7 @@ class SessionStore(context: Context) {
     private val appContext = context.applicationContext
     private val gson = Gson()
     private val claveSesion = stringPreferencesKey("sesion_json")
+    private val claveHogarActivo = intPreferencesKey("hogar_activo")
 
     private fun claveInventario(idHogar: Int) =
         stringPreferencesKey("inventario_${idHogar}_json")
@@ -47,5 +49,16 @@ class SessionStore(context: Context) {
 
     suspend fun limpiarInventario(idHogar: Int) {
         appContext.dataStore.edit { it.remove(claveInventario(idHogar)) }
+    }
+    suspend fun leerHogarActivo(): Int? = appContext.dataStore.data
+        .map { it[claveHogarActivo] }
+        .first()
+
+    suspend fun guardarHogarActivo(idHogar: Int) {
+        appContext.dataStore.edit { it[claveHogarActivo] = idHogar }
+    }
+
+    suspend fun limpiarHogarActivo() {
+        appContext.dataStore.edit { it.remove(claveHogarActivo) }
     }
 }

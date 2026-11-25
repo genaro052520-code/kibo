@@ -22,13 +22,11 @@ import com.genaro.kibo.ui.theme.*
 
 @Composable
 fun AjustesScreen(vm: AppViewModel) {
-    LaunchedEffect(Unit) {
-        vm.limpiarAvisosAjustes()
-        vm.cargarPlan()
-    }
+    LaunchedEffect(Unit) { vm.limpiarAvisosAjustes() }
+    LaunchedEffect(vm.hogarActivoId) { vm.cargarPlan() }
 
     val usuario = vm.sesion?.usuario
-    val hogarId = vm.sesion?.hogares?.firstOrNull()?.id_hogar
+    val hogarId = vm.hogarActivo?.id_hogar
     val hogarPlan = vm.plan?.hogares?.firstOrNull { it.id_hogar == hogarId }
     val esAdmin = hogarPlan?.rol == "admin"
     var codigo by remember { mutableStateOf("") }
@@ -43,6 +41,7 @@ fun AjustesScreen(vm: AppViewModel) {
     ) {
         Text("K.I.B.O.", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = KiboPurple)
         Text("Ajustes", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = KiboPurple)
+        SelectorHogar(vm)
         Spacer(Modifier.height(16.dp))
 
         if (vm.cargandoPlan) {

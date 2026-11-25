@@ -23,7 +23,7 @@ import kotlin.math.roundToInt
 @Composable
 fun InicioScreen(vm: AppViewModel) {
     // Cada vez que se entra a Inicio, se piden datos frescos
-    LaunchedEffect(Unit) { vm.cargarEstadisticas() }
+    LaunchedEffect(vm.hogarActivoId) { vm.cargarEstadisticas() }
     val est = vm.estadisticas
 
     Column(
@@ -36,6 +36,7 @@ fun InicioScreen(vm: AppViewModel) {
     ) {
         Text("K.I.B.O.", fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, color = KiboPurple)
         Text("Inicio", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = KiboPurple)
+        SelectorHogar(vm)
         Spacer(Modifier.height(16.dp))
 
         if (vm.cargandoEstadisticas) {

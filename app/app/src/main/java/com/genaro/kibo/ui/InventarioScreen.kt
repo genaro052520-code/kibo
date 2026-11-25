@@ -48,6 +48,7 @@ fun InventarioScreen(vm: AppViewModel) {
     ) {
         Column(Modifier.fillMaxSize()) {
             // ---------- Encabezado ----------
+            SelectorHogar(vm, Modifier.padding(horizontal = 20.dp))
             Row(
                 Modifier
                     .fillMaxWidth()
