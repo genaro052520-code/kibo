@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -145,7 +146,7 @@ fun InventarioScreen(vm: AppViewModel) {
             } else {
                 LazyColumn(
                     contentPadding = PaddingValues(
-                        start = 20.dp, end = 20.dp, top = 8.dp, bottom = 100.dp
+                        start = 20.dp, end = 20.dp, top = 8.dp, bottom = 150.dp
                     ),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -163,17 +164,30 @@ fun InventarioScreen(vm: AppViewModel) {
         }
 
         // ---------- Botón + ----------
-        FloatingActionButton(
-            onClick = { vm.abrirAgregar() },
-            containerColor = KiboGreen,
-            contentColor = Color.White,
-            shape = RoundedCornerShape(20.dp),
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(20.dp)
+                .padding(20.dp),
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Agregar alimento",
-                modifier = Modifier.size(32.dp))
+            SmallFloatingActionButton(
+                onClick = { vm.abrirDictado() },
+                containerColor = KiboPurple,
+                contentColor = Color.White,
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Default.Mic, contentDescription = "Agregar por voz")
+            }
+            FloatingActionButton(
+                onClick = { vm.abrirAgregar() },
+                containerColor = KiboGreen,
+                contentColor = Color.White,
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Agregar alimento",
+                    modifier = Modifier.size(32.dp))
+            }
         }
 
         // ---------- Diálogos (dentro del Box) ----------

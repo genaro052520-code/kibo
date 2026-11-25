@@ -24,6 +24,8 @@ import com.genaro.kibo.data.UnirseRequest
 import com.genaro.kibo.data.UsuarioDto
 import com.genaro.kibo.data.NuevoProductoRequest
 import com.genaro.kibo.data.ProductoDto
+import com.genaro.kibo.data.Dictado
+import com.genaro.kibo.data.LineaDictada
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import retrofit2.HttpException
@@ -154,6 +156,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         errorAjustes = null
         avisoAjustes = null
         catalogo = null
+        mostrandoDictado = false
+        limpiarDictado()
         resultadosBusqueda = null
         errorProducto = null
         mostrandoAgregar = false
@@ -387,7 +391,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         idCategoria: Int,
         dias: Int,
         alCrear: (ProductoDto) -> Unit
-    ) {
+    )
+    {
         viewModelScope.launch {
             creandoProducto = true
             errorProducto = null
@@ -408,6 +413,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             creandoProducto = false
         }
     }
+
 
     private fun cargarCatalogo() {
         viewModelScope.launch {
@@ -491,6 +497,113 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // ----- Agregar por voz -----
+    var mostrandoDictado by mutableStateOf(false)
+        private set
+    var lineasDictado by mutableStateOf<List<LineaDictada>>(emptyList())
+        private set
+    var procesandoDictado by mutableStateOf(false)
+        private set
+    var guardandoDictado by mutableStateOf(false)
+        private set
+    var errorDictado by mutableStateOf<String?>(null)
+        private set
+
+    fun abrirDictado() {
+        limpiarDictado()
+        mostrandoDictado = true
+        if (catalogo == null) cargarCatalogo()   // se necesitan las unidades
+    }
+
+    fun cerrarDictado() {
+        mostrandoDictado = false
+        limpiarDictado()
+    }
+
+    private fun limpiarDictado() {
+        lineasDictado = emptyList()
+        procesandoDictado = false
+        guardandoDictado = false
+        errorDictado = null
+    }
+
+    fun procesarFrase(frase: String) {
+        errorDictado = null
+        val partes = Dictado.interpretar(frase)
+        if (partes.isEmpty()) {
+            lineasDictado = emptyList()
+            errorDictado = "No entendí ningún alimento. Prueba con: " +
+                    "\"dos litros de leche y una docena de huevos\""
+            return
+        }
+        viewModelScope.launch {
+            val hogar = hogarActivo ?: return@launch
+            procesandoDictado = true
+            try {
+                lineasDictado = partes.mapIndexed { i, p ->
+                    val candidatos = ApiClient.api
+                        .buscarProductos(p.consulta, hogar.id_hogar)
+                        .coincidencias.take(3)
+                    LineaDictada(
+                        id = i,
+                        consulta = p.consulta,
+                        cantidad = p.cantidad,
+                        unidad = p.unidad,
+                        candidatos = candidatos,
+                        elegidoId = candidatos.firstOrNull()?.id_producto,
+                        incluir = candidatos.isNotEmpty()
+                    )
+                }
+            } catch (e: Exception) {
+                lineasDictado = emptyList()
+                errorDictado = mensaje(e)
+            }
+            procesandoDictado = false
+        }
+    }
+
+    fun actualizarLineaDictado(id: Int, cambio: (LineaDictada) -> LineaDictada) {
+        lineasDictado = lineasDictado.map { if (it.id == id) cambio(it) else it }
+    }
+
+    fun guardarDictado() {
+        val hogar = hogarActivo ?: return
+        val unidades = catalogo?.unidades.orEmpty()
+        val aGuardar = lineasDictado.filter { it.incluir && it.elegidoId != null }
+        if (aGuardar.isEmpty()) return
+        if (unidades.isEmpty()) {
+            errorDictado = "El catálogo aún se está cargando, intenta de nuevo"
+            return
+        }
+        viewModelScope.launch {
+            guardandoDictado = true
+            errorDictado = null
+            val guardadas = mutableSetOf<Int>()
+            for (l in aGuardar) {
+                val idUnidad = (unidades.firstOrNull { it.abreviatura == l.unidad }
+                    ?: unidades.first()).id_unidad
+                try {
+                    ApiClient.api.agregarItem(
+                        hogar.id_hogar,
+                        NuevoItemRequest(l.elegidoId!!, idUnidad, l.cantidad)
+                    )
+                    guardadas += l.id
+                } catch (e: Exception) {
+                    errorDictado = "Se agregaron ${guardadas.size} de ${aGuardar.size}. " +
+                            mensaje(e)
+                    break
+                }
+            }
+            // Lo que ya se guardó sale de la lista; lo pendiente se queda para reintentar
+            lineasDictado = lineasDictado.filterNot { it.id in guardadas }
+            guardandoDictado = false
+            if (errorDictado == null) {
+                mostrandoDictado = false
+                limpiarDictado()
+            }
+            recargar()
+        }
+    }
     // ---------------------------------------------------------------
     // Estadísticas
     // ---------------------------------------------------------------
