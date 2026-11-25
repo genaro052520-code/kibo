@@ -17,6 +17,24 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `alias_productos`
+--
+
+DROP TABLE IF EXISTS `alias_productos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `alias_productos` (
+  `id_alias` int(11) NOT NULL AUTO_INCREMENT,
+  `id_producto` int(11) NOT NULL,
+  `alias` varchar(120) NOT NULL,
+  PRIMARY KEY (`id_alias`),
+  UNIQUE KEY `uq_alias_producto` (`id_producto`,`alias`),
+  KEY `idx_alias` (`alias`),
+  CONSTRAINT `fk_alias_producto` FOREIGN KEY (`id_producto`) REFERENCES `productos` (`id_producto`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=357 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `categorias`
 --
 
@@ -28,7 +46,7 @@ CREATE TABLE `categorias` (
   `nombre` varchar(60) NOT NULL,
   PRIMARY KEY (`id_categoria`),
   UNIQUE KEY `nombre` (`nombre`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -91,7 +109,7 @@ CREATE TABLE `inventario` (
   CONSTRAINT `fk_inv_prod` FOREIGN KEY (`id_producto`) REFERENCES `productos` (`id_producto`),
   CONSTRAINT `fk_inv_uni` FOREIGN KEY (`id_unidad`) REFERENCES `unidades_medida` (`id_unidad`),
   CONSTRAINT `fk_inv_user` FOREIGN KEY (`agregado_por`) REFERENCES `usuarios` (`id_usuario`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=80 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=86 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -114,7 +132,7 @@ CREATE TABLE `invitaciones` (
   KEY `fk_inv_cod_user` (`creado_por`),
   CONSTRAINT `fk_inv_cod_hogar` FOREIGN KEY (`id_hogar`) REFERENCES `hogares` (`id_hogar`) ON DELETE CASCADE,
   CONSTRAINT `fk_inv_cod_user` FOREIGN KEY (`creado_por`) REFERENCES `usuarios` (`id_usuario`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -154,7 +172,7 @@ CREATE TABLE `productos` (
   KEY `fk_prod_hogar` (`id_hogar`),
   CONSTRAINT `fk_prod_cat` FOREIGN KEY (`id_categoria`) REFERENCES `categorias` (`id_categoria`),
   CONSTRAINT `fk_prod_hogar` FOREIGN KEY (`id_hogar`) REFERENCES `hogares` (`id_hogar`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=193 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -203,4 +221,4 @@ CREATE TABLE `usuarios` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-11-17 23:11:04
+-- Dump completed on 2026-11-24 22:54:49

@@ -1,5 +1,8 @@
 import secrets
 import os
+import re
+import unicodedata
+from difflib import SequenceMatcher
 from datetime import date, datetime, timedelta
 from flask import Flask, request, jsonify
 from flask_jwt_extended import (JWTManager, create_access_token,
@@ -11,7 +14,7 @@ from flask_limiter.util import get_remote_address
 
 from config import Config
 from models import (db, Plan, Usuario, Hogar, HogarMiembro,
-                    Producto, UnidadMedida, Inventario, Invitacion, Categoria)
+                    Producto, UnidadMedida, Inventario, Invitacion, Categoria, Alias)
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -739,5 +742,98 @@ def eliminar_producto_personalizado(id_hogar, id_producto):
         db.session.rollback()
         return jsonify({"error": "Error interno", "detalle": detalle(e)}), 500
 
+# ====================== BÚSQUEDA APROXIMADA ======================
+UMBRAL_BUSQUEDA = 0.6   # por debajo de esto no se considera coincidencia
+
+
+def normalizar(texto):
+    """Minúsculas, sin acentos ni signos: 'Jamón!' -> 'jamon'."""
+    texto = unicodedata.normalize("NFD", texto or "")
+    texto = "".join(c for c in texto if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9 ]+", " ", texto.lower()).strip()
+
+
+def _puntaje(consulta, candidato):
+    """Qué tan parecidos son dos textos ya normalizados (0 a 1)."""
+    if not consulta or not candidato:
+        return 0.0
+    if consulta == candidato:
+        return 1.0
+    if len(consulta) >= 3 and len(candidato) >= 3 and (
+            candidato.startswith(consulta) or consulta.startswith(candidato)):
+        return 0.9
+    palabras = candidato.split()
+    if consulta in palabras:
+        return 0.85
+    if len(consulta) >= 4 and consulta in candidato:
+        return 0.8
+    mejor = SequenceMatcher(None, consulta, candidato).ratio()
+    for p in palabras:
+        mejor = max(mejor, SequenceMatcher(None, consulta, p).ratio() * 0.95)
+    return mejor
+
+
+@app.route("/api/productos/buscar", methods=["GET"])
+@jwt_required()
+def buscar_productos():
+    """?q=texto (se puede repetir q para varias interpretaciones de la voz),
+    ?hogar=ID para incluir los productos personalizados, ?limite=5."""
+    try:
+        consultas = [normalizar(q) for q in request.args.getlist("q")]
+        consultas = [q for q in consultas if q]
+        if not consultas:
+            return jsonify({"error": "q es obligatorio"}), 400
+
+        id_hogar, error = hogar_de_parametro()
+        if error:
+            return error
+        limite = max(1, min(request.args.get("limite", default=5, type=int), 20))
+
+        productos = productos_visibles(id_hogar).all()
+        alias_de = {}
+        ids = [p.id_producto for p in productos]
+        if ids:
+            for a in Alias.query.filter(Alias.id_producto.in_(ids)).all():
+                alias_de.setdefault(a.id_producto, []).append(a.alias)
+
+        resultados = []
+        for p in productos:
+            nombre_norm = normalizar(p.nombre)
+            mejor, por = 0.0, p.nombre
+            for q in consultas:
+                s = _puntaje(q, nombre_norm)
+                if s > mejor:
+                    mejor, por = s, p.nombre
+                for al in alias_de.get(p.id_producto, []):
+                    # Un alias exacto vale un poco menos que el nombre oficial
+                    s = min(_puntaje(q, normalizar(al)), 0.97)
+                    if s > mejor:
+                        mejor, por = s, al
+            if mejor >= UMBRAL_BUSQUEDA:
+                resultados.append((mejor, p, por))
+
+        resultados.sort(key=lambda r: (-r[0], r[1].nombre))
+        resultados = resultados[:limite]
+
+        coincidencias = []
+        for puntaje, p, por in resultados:
+            item = _producto_json(p)
+            item["puntaje"] = round(puntaje, 2)
+            item["coincide_con"] = por
+            item["confianza"] = ("alta" if puntaje >= 0.9
+                                 else "media" if puntaje >= 0.7 else "baja")
+            coincidencias.append(item)
+
+        # "seguro": hay una opción clara y la app puede proponerla sin preguntar
+        seguro = bool(coincidencias) and coincidencias[0]["confianza"] == "alta" and (
+            len(coincidencias) == 1
+            or coincidencias[0]["puntaje"] - coincidencias[1]["puntaje"] >= 0.05)
+
+        return jsonify({"consultas": request.args.getlist("q"),
+                        "total": len(coincidencias),
+                        "seguro": seguro,
+                        "coincidencias": coincidencias}), 200
+    except Exception as e:
+        return jsonify({"error": "Error interno", "detalle": detalle(e)}), 500
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
