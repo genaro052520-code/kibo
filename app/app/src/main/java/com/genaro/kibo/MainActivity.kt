@@ -32,6 +32,7 @@ import com.genaro.kibo.ui.InventarioScreen
 import com.genaro.kibo.ui.LoginScreen
 import com.genaro.kibo.ui.RegistroScreen
 import com.genaro.kibo.ui.theme.KIBOTheme
+import com.genaro.kibo.ui.VozScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,6 +46,7 @@ class MainActivity : ComponentActivity() {
                 val vm: AppViewModel = viewModel()
 
                 BackHandler(enabled = vm.mostrandoAgregar) { vm.cerrarAgregar() }
+                BackHandler(enabled = vm.mostrandoDictado) { vm.cerrarDictado() }
                 BackHandler(enabled = vm.sesion == null && vm.mostrandoRegistro) {
                     vm.cerrarRegistro()
                 }
@@ -56,6 +58,7 @@ class MainActivity : ComponentActivity() {
                     vm.restaurandoSesion -> PantallaCargando()
                     vm.sesion == null && vm.mostrandoRegistro -> RegistroScreen(vm)
                     vm.sesion == null -> LoginScreen(vm)
+                    vm.mostrandoDictado -> VozScreen(vm)
                     vm.mostrandoAgregar -> AgregarScreen(vm)
                     else -> MainScreenWithNavigation(vm)
                 }

@@ -60,7 +60,9 @@ data class ProductoDto(
     val categoria: String,
     val dias_vida_util: Int,
     val personalizado: Boolean,
-    val id_hogar: Int?
+    val id_hogar: Int?,
+    val puntaje: Double? = null,
+    val confianza: String? = null   // "alta", "media" o "baja" (solo en la búsqueda)
 )
 
 data class CatalogoResponse(
