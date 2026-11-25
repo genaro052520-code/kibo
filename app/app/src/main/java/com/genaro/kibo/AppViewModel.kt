@@ -18,6 +18,9 @@ import com.genaro.kibo.data.RegistroRequest
 import com.genaro.kibo.data.SessionStore
 import com.genaro.kibo.data.UsuarioDto
 import com.genaro.kibo.data.EstadisticasResponse
+import com.genaro.kibo.data.InvitacionResponse
+import com.genaro.kibo.data.PlanResponse
+import com.genaro.kibo.data.UnirseRequest
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import retrofit2.HttpException
@@ -105,6 +108,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         sesion = null
         inventario = emptyList()
         estadisticas = null
+        plan = null
+        invitacion = null
+        errorAjustes = null
+        avisoAjustes = null
         inventarioCargado = false
         sinConexion = false
         error = null
@@ -195,6 +202,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         sesion = null
         inventario = emptyList()
         estadisticas = null
+        plan = null
+        invitacion = null
+        errorAjustes = null
+        avisoAjustes = null
         inventarioCargado = false
         sinConexion = false
         catalogo = null
@@ -272,6 +283,89 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             }
             cargandoEstadisticas = false
         }
+    }
+    // ----- Ajustes: plan, invitaciones, unirse -----
+    var plan by mutableStateOf<PlanResponse?>(null)
+        private set
+    var cargandoPlan by mutableStateOf(false)
+        private set
+    var errorAjustes by mutableStateOf<String?>(null)
+        private set
+    var avisoAjustes by mutableStateOf<String?>(null)
+        private set
+    var invitacion by mutableStateOf<InvitacionResponse?>(null)
+        private set
+
+    fun cargarPlan() {
+        viewModelScope.launch {
+            cargandoPlan = true
+            errorAjustes = null
+            try {
+                plan = ApiClient.cuentaApi.plan()
+            } catch (e: Exception) {
+                errorAjustes = mensaje(e)
+            }
+            cargandoPlan = false
+        }
+    }
+
+    fun generarInvitacion() {
+        viewModelScope.launch {
+            errorAjustes = null
+            avisoAjustes = null
+            try {
+                val hogar = sesion?.hogares?.firstOrNull() ?: return@launch
+                invitacion = ApiClient.cuentaApi.crearInvitacion(hogar.id_hogar)
+            } catch (e: Exception) {
+                errorAjustes = mensaje(e)
+            }
+        }
+    }
+
+    fun unirseAHogar(codigo: String) {
+        viewModelScope.launch {
+            errorAjustes = null
+            avisoAjustes = null
+            try {
+                val r = ApiClient.cuentaApi.unirse(UnirseRequest(codigo.trim().uppercase()))
+                val actual = sesion
+                if (actual != null && actual.hogares.none { it.id_hogar == r.id_hogar }) {
+                    val nueva = actual.copy(hogares = actual.hogares + HogarDto(r.id_hogar, "miembro"))
+                    sesion = nueva
+                    sessionStore.guardarSesion(nueva)
+                }
+                avisoAjustes = "Te uniste al hogar #${r.id_hogar}. " +
+                        "La app seguirá mostrando tu primer hogar hasta que agreguemos el selector de hogar."
+                cargarPlan()
+            } catch (e: Exception) {
+                errorAjustes = mensaje(e)
+            }
+        }
+    }
+
+    fun mejorarAPremium() {
+        viewModelScope.launch {
+            errorAjustes = null
+            avisoAjustes = null
+            try {
+                val r = ApiClient.cuentaApi.mejorarAPremium()
+                val actual = sesion
+                if (actual != null) {
+                    val nueva = actual.copy(usuario = actual.usuario.copy(plan = r.plan))
+                    sesion = nueva
+                    sessionStore.guardarSesion(nueva)
+                }
+                avisoAjustes = r.mensaje
+                cargarPlan()
+            } catch (e: Exception) {
+                errorAjustes = mensaje(e)
+            }
+        }
+    }
+
+    fun limpiarAvisosAjustes() {
+        errorAjustes = null
+        avisoAjustes = null
     }
     // ----- Consumir / desechar -----
     fun cambiarEstado(idItem: Int, estado: String) {
