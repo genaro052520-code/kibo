@@ -85,3 +85,9 @@ class Invitacion(db.Model):
     creado_por = db.Column(db.Integer, db.ForeignKey("usuarios.id_usuario"))
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     fecha_expiracion = db.Column(db.DateTime, nullable=False)
+
+class Alias(db.Model):
+    __tablename__ = "alias_productos"
+    id_alias = db.Column(db.Integer, primary_key=True)
+    id_producto = db.Column(db.Integer, db.ForeignKey("productos.id_producto"), nullable=False)
+    alias = db.Column(db.String(120), nullable=False)
