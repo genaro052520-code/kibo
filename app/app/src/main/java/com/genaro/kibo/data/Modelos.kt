@@ -86,3 +86,6 @@ data class ActualizarItemResponse(
     val cantidad: Double,
     val fecha_caducidad: String
 )
+data class EditarItemRequest(val cantidad: Double, val fecha_caducidad: String)
+
+data class EliminarItemResponse(val mensaje: String, val id_item: Int)

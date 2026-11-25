@@ -9,6 +9,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.PATCH
+import retrofit2.http.DELETE
 import java.util.concurrent.TimeUnit
 import retrofit2.http.Query
 interface ApiService {
@@ -36,6 +37,18 @@ interface ApiService {
         @Path("idItem") idItem: Int,
         @Body body: ActualizarItemRequest
     ): ActualizarItemResponse
+    @PATCH("api/hogares/{id}/inventario/{idItem}")
+    suspend fun editarItem(
+        @Path("id") idHogar: Int,
+        @Path("idItem") idItem: Int,
+        @Body body: EditarItemRequest
+    ): ActualizarItemResponse
+
+    @DELETE("api/hogares/{id}/inventario/{idItem}")
+    suspend fun eliminarItem(
+        @Path("id") idHogar: Int,
+        @Path("idItem") idItem: Int
+    ): EliminarItemResponse
 }
 
 object ApiClient {

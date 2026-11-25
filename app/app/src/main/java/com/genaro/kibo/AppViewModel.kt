@@ -21,6 +21,7 @@ import com.genaro.kibo.data.EstadisticasResponse
 import com.genaro.kibo.data.InvitacionResponse
 import com.genaro.kibo.data.PlanResponse
 import com.genaro.kibo.data.UnirseRequest
+import com.genaro.kibo.data.EditarItemRequest
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import retrofit2.HttpException
@@ -377,6 +378,37 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 ApiClient.api.actualizarItem(
                     hogar.id_hogar, idItem, ActualizarItemRequest(estado)
                 )
+                inventario = inventario.filter { it.id_item != idItem }
+                sessionStore.guardarInventario(hogar.id_hogar, inventario)
+            } catch (e: Exception) {
+                error = mensaje(e)
+            }
+        }
+    }
+    // ----- Editar / eliminar -----
+    fun editarItem(idItem: Int, cantidad: Double, fechaCaducidad: String) {
+        viewModelScope.launch {
+            error = null
+            try {
+                val hogar = sesion?.hogares?.firstOrNull()
+                    ?: throw IllegalStateException("Tu usuario no pertenece a ningún hogar")
+                ApiClient.api.editarItem(
+                    hogar.id_hogar, idItem, EditarItemRequest(cantidad, fechaCaducidad)
+                )
+                recargar()   // vuelve a pedir la lista: queda ordenada y con los días recalculados
+            } catch (e: Exception) {
+                error = mensaje(e)
+            }
+        }
+    }
+
+    fun eliminarItem(idItem: Int) {
+        viewModelScope.launch {
+            error = null
+            try {
+                val hogar = sesion?.hogares?.firstOrNull()
+                    ?: throw IllegalStateException("Tu usuario no pertenece a ningún hogar")
+                ApiClient.api.eliminarItem(hogar.id_hogar, idItem)
                 inventario = inventario.filter { it.id_item != idItem }
                 sessionStore.guardarInventario(hogar.id_hogar, inventario)
             } catch (e: Exception) {

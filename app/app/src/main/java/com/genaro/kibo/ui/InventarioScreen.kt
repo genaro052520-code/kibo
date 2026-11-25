@@ -8,11 +8,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.genaro.kibo.AppViewModel
@@ -30,6 +32,8 @@ import com.genaro.kibo.ui.theme.*
 fun InventarioScreen(vm: AppViewModel) {
     var filtro by remember { mutableStateOf("Todos") }
     var menuAbierto by remember { mutableStateOf(false) }
+    var itemEditando by remember { mutableStateOf<ItemDto?>(null) }
+    var itemEliminando by remember { mutableStateOf<ItemDto?>(null) }
 
     val categorias = listOf("Todos") + vm.inventario.map { it.categoria }.distinct()
     val filtroActivo = if (filtro in categorias) filtro else "Todos"
@@ -122,7 +126,9 @@ fun InventarioScreen(vm: AppViewModel) {
                         TarjetaAlimento(
                             item,
                             onConsumido = { vm.cambiarEstado(item.id_item, "consumido") },
-                            onDesechado = { vm.cambiarEstado(item.id_item, "desechado") }
+                            onDesechado = { vm.cambiarEstado(item.id_item, "desechado") },
+                            onEditar = { itemEditando = item },
+                            onEliminar = { itemEliminando = item }
                         )
                     }
                 }
@@ -141,6 +147,40 @@ fun InventarioScreen(vm: AppViewModel) {
         ) {
             Icon(Icons.Default.Add, contentDescription = "Agregar alimento",
                 modifier = Modifier.size(32.dp))
+        }
+
+        // ---------- Diálogos (dentro del Box) ----------
+        itemEditando?.let { item ->
+            DialogoEditar(
+                item = item,
+                onCancelar = { itemEditando = null },
+                onGuardar = { cantidad, fecha ->
+                    vm.editarItem(item.id_item, cantidad, fecha)
+                    itemEditando = null
+                }
+            )
+        }
+
+        itemEliminando?.let { item ->
+            AlertDialog(
+                onDismissRequest = { itemEliminando = null },
+                title = { Text("¿Eliminar ${item.producto}?") },
+                text = {
+                    Text(
+                        "Se borra el registro y no cuenta en las estadísticas. " +
+                                "Si ya lo comiste o lo tiraste, usa \"Lo consumí\" o \"Lo desecché\"."
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        vm.eliminarItem(item.id_item)
+                        itemEliminando = null
+                    }) { Text("Eliminar", color = AvisoRojo) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { itemEliminando = null }) { Text("Cancelar") }
+                }
+            )
         }
     }
 }
@@ -177,7 +217,9 @@ private fun emojiDe(categoria: String) = when (categoria) {
 fun TarjetaAlimento(
     item: ItemDto,
     onConsumido: () -> Unit = {},
-    onDesechado: () -> Unit = {}
+    onDesechado: () -> Unit = {},
+    onEditar: () -> Unit = {},
+    onEliminar: () -> Unit = {}
 ) {
     var menu by remember { mutableStateOf(false) }
     val (texto, color) = when {
@@ -240,8 +282,77 @@ fun TarjetaAlimento(
                         text = { Text("🗑️ Lo desecché") },
                         onClick = { menu = false; onDesechado() }
                     )
+                    DropdownMenuItem(
+                        text = { Text("✏️ Editar") },
+                        onClick = { menu = false; onEditar() }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("❌ Eliminar") },
+                        onClick = { menu = false; onEliminar() }
+                    )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun DialogoEditar(
+    item: ItemDto,
+    onCancelar: () -> Unit,
+    onGuardar: (Double, String) -> Unit
+) {
+    var cantidad by remember {
+        mutableStateOf(
+            if (item.cantidad % 1.0 == 0.0) item.cantidad.toInt().toString()
+            else item.cantidad.toString()
+        )
+    }
+    var fecha by remember { mutableStateOf(item.fecha_caducidad) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onCancelar,
+        title = { Text("Editar ${item.producto}") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = cantidad,
+                    onValueChange = { cantidad = it },
+                    label = { Text("Cantidad (${item.unidad})") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = fecha,
+                    onValueChange = { fecha = it },
+                    label = { Text("Caducidad (AAAA-MM-DD)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                error?.let {
+                    Spacer(Modifier.height(8.dp))
+                    Text(it, color = AvisoRojo)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val c = cantidad.replace(',', '.').toDoubleOrNull()
+                val f = try {
+                    java.time.LocalDate.parse(fecha.trim()).toString()
+                } catch (e: Exception) {
+                    null
+                }
+                when {
+                    c == null || c <= 0 -> error = "La cantidad debe ser mayor que 0"
+                    f == null -> error = "Fecha inválida. Usa AAAA-MM-DD, por ejemplo 2026-12-31"
+                    else -> onGuardar(c, f)
+                }
+            }) { Text("Guardar") }
+        },
+        dismissButton = { TextButton(onClick = onCancelar) { Text("Cancelar") } }
+    )
 }
