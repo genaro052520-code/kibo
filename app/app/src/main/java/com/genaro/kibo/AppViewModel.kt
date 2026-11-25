@@ -6,22 +6,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.genaro.kibo.data.ActualizarItemRequest
 import com.genaro.kibo.data.ApiClient
 import com.genaro.kibo.data.CatalogoResponse
+import com.genaro.kibo.data.EditarItemRequest
+import com.genaro.kibo.data.EstadisticasResponse
 import com.genaro.kibo.data.HogarDto
+import com.genaro.kibo.data.InvitacionResponse
 import com.genaro.kibo.data.ItemDto
 import com.genaro.kibo.data.LoginRequest
 import com.genaro.kibo.data.LoginResponse
 import com.genaro.kibo.data.NuevoItemRequest
-import com.genaro.kibo.data.ActualizarItemRequest
+import com.genaro.kibo.data.PlanResponse
 import com.genaro.kibo.data.RegistroRequest
 import com.genaro.kibo.data.SessionStore
-import com.genaro.kibo.data.UsuarioDto
-import com.genaro.kibo.data.EstadisticasResponse
-import com.genaro.kibo.data.InvitacionResponse
-import com.genaro.kibo.data.PlanResponse
 import com.genaro.kibo.data.UnirseRequest
-import com.genaro.kibo.data.EditarItemRequest
+import com.genaro.kibo.data.UsuarioDto
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import retrofit2.HttpException
@@ -31,10 +31,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private val sessionStore = SessionStore(app)
 
-    init {
-        restaurarSesion()
-    }
-
+    // ===== Sesión e inventario =====
     var cargando by mutableStateOf(false)
         private set
     var error by mutableStateOf<String?>(null)
@@ -50,19 +47,30 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     var restaurandoSesion by mutableStateOf(true)
         private set
 
-    // ----- Pantalla de registro -----
+    // ===== Hogar activo =====
+    var hogarActivoId by mutableStateOf<Int?>(null)
+        private set
+
+    /** El hogar que se está viendo. Si no hay uno elegido (o ya no existe), el primero. */
+    val hogarActivo: HogarDto?
+        get() {
+            val lista = sesion?.hogares ?: return null
+            return lista.firstOrNull { it.id_hogar == hogarActivoId } ?: lista.firstOrNull()
+        }
+
+    // ===== Registro =====
     var cargandoRegistro by mutableStateOf(false)
         private set
     var errorRegistro by mutableStateOf<String?>(null)
         private set
     var mostrandoRegistro by mutableStateOf(false)
         private set
-//agrego esto jaz
+
+    // ===== Navegación =====
     var pantallaActual by mutableStateOf("inicio")
         private set
 
-
-    // ----- Pantalla "Agregar alimento" -----
+    // ===== Agregar alimento =====
     var catalogo by mutableStateOf<CatalogoResponse?>(null)
         private set
     var mostrandoAgregar by mutableStateOf(false)
@@ -71,17 +79,46 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var errorAgregar by mutableStateOf<String?>(null)
         private set
-    //agrego esto jaz
+
+    // ===== Estadísticas (Inicio) =====
+    var estadisticas by mutableStateOf<EstadisticasResponse?>(null)
+        private set
+    var cargandoEstadisticas by mutableStateOf(false)
+        private set
+    var errorEstadisticas by mutableStateOf<String?>(null)
+        private set
+
+    // ===== Ajustes: plan, invitaciones, unirse =====
+    var plan by mutableStateOf<PlanResponse?>(null)
+        private set
+    var cargandoPlan by mutableStateOf(false)
+        private set
+    var errorAjustes by mutableStateOf<String?>(null)
+        private set
+    var avisoAjustes by mutableStateOf<String?>(null)
+        private set
+    var invitacion by mutableStateOf<InvitacionResponse?>(null)
+        private set
+
+    init {
+        restaurarSesion()
+    }
+
     fun cambiarPantalla(nuevaPantalla: String) {
         pantallaActual = nuevaPantalla
     }
+
+    // ---------------------------------------------------------------
+    // Sesión
+    // ---------------------------------------------------------------
     private fun restaurarSesion() {
         viewModelScope.launch {
             val guardada = sessionStore.leerSesion()
             if (guardada != null) {
                 ApiClient.token = guardada.access_token
                 sesion = guardada
-                guardada.hogares.firstOrNull()?.let { hogar ->
+                hogarActivoId = sessionStore.leerHogarActivo()
+                hogarActivo?.let { hogar ->
                     sessionStore.leerInventario(hogar.id_hogar)?.let { cache ->
                         inventario = cache
                         inventarioCargado = true
@@ -101,21 +138,43 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private suspend fun limpiarSesionLocal() {
-        val hogarId = sesion?.hogares?.firstOrNull()?.id_hogar
-        sessionStore.limpiarSesion()
-        if (hogarId != null) sessionStore.limpiarInventario(hogarId)
+    private fun reiniciarEstado() {
         ApiClient.token = null
         sesion = null
+        hogarActivoId = null
         inventario = emptyList()
+        inventarioCargado = false
+        sinConexion = false
         estadisticas = null
+        errorEstadisticas = null
         plan = null
         invitacion = null
         errorAjustes = null
         avisoAjustes = null
-        inventarioCargado = false
-        sinConexion = false
+        catalogo = null
+        mostrandoAgregar = false
         error = null
+        errorAgregar = null
+        mostrandoRegistro = false
+        errorRegistro = null
+    }
+
+    private suspend fun limpiarSesionLocal() {
+        val hogarId = hogarActivo?.id_hogar
+        reiniciarEstado()
+        sessionStore.limpiarSesion()
+        sessionStore.limpiarHogarActivo()
+        if (hogarId != null) sessionStore.limpiarInventario(hogarId)
+    }
+
+    fun salir() {
+        val hogarId = hogarActivo?.id_hogar
+        reiniciarEstado()
+        viewModelScope.launch {
+            sessionStore.limpiarSesion()
+            sessionStore.limpiarHogarActivo()
+            if (hogarId != null) sessionStore.limpiarInventario(hogarId)
+        }
     }
 
     private fun esSinRed(e: Exception) = e is IOException
@@ -129,7 +188,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 val r = ApiClient.api.login(LoginRequest(email, password))
                 ApiClient.token = r.access_token
                 sesion = r
+                hogarActivoId = r.hogares.firstOrNull()?.id_hogar
                 sessionStore.guardarSesion(r)
+                hogarActivoId?.let { sessionStore.guardarHogarActivo(it) }
                 traerInventario()
             } catch (e: Exception) {
                 error = mensaje(e)
@@ -138,7 +199,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    // ----- Registro -----
+    // ---------------------------------------------------------------
+    // Registro
+    // ---------------------------------------------------------------
     fun abrirRegistro() {
         errorRegistro = null
         mostrandoRegistro = true
@@ -174,7 +237,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     hogares = listOf(HogarDto(r.id_hogar, r.rol))
                 )
                 sesion = nueva
+                hogarActivoId = r.id_hogar
                 sessionStore.guardarSesion(nueva)
+                sessionStore.guardarHogarActivo(r.id_hogar)
                 mostrandoRegistro = false
                 traerInventario()
             } catch (e: Exception) {
@@ -184,6 +249,42 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // ---------------------------------------------------------------
+    // Cambiar de hogar
+    // ---------------------------------------------------------------
+    fun cambiarHogar(idHogar: Int) {
+        val existe = sesion?.hogares?.any { it.id_hogar == idHogar } == true
+        if (!existe || idHogar == hogarActivo?.id_hogar) return
+
+        hogarActivoId = idHogar
+        // Limpia lo del hogar anterior para no mostrar datos de otro hogar
+        inventario = emptyList()
+        inventarioCargado = false
+        sinConexion = false
+        estadisticas = null
+        errorEstadisticas = null
+        plan = null
+        invitacion = null
+        catalogo = null
+        error = null
+        errorAjustes = null
+        avisoAjustes = null
+
+        viewModelScope.launch {
+            sessionStore.guardarHogarActivo(idHogar)
+            sessionStore.leerInventario(idHogar)?.let { cache ->
+                if (hogarActivo?.id_hogar == idHogar) {
+                    inventario = cache
+                    inventarioCargado = true
+                }
+            }
+            recargar()
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Inventario
+    // ---------------------------------------------------------------
     fun recargar() {
         viewModelScope.launch {
             cargando = true
@@ -197,27 +298,28 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun salir() {
-        val hogarId = sesion?.hogares?.firstOrNull()?.id_hogar
-        ApiClient.token = null
-        sesion = null
-        inventario = emptyList()
-        estadisticas = null
-        plan = null
-        invitacion = null
-        errorAjustes = null
-        avisoAjustes = null
-        inventarioCargado = false
-        sinConexion = false
-        catalogo = null
-        mostrandoAgregar = false
-        error = null
-        errorAgregar = null
-        mostrandoRegistro = false
-        errorRegistro = null
-        viewModelScope.launch {
-            sessionStore.limpiarSesion()
-            if (hogarId != null) sessionStore.limpiarInventario(hogarId)
+    private suspend fun traerInventario() {
+        val hogar = hogarActivo
+            ?: throw IllegalStateException("Tu usuario no pertenece a ningún hogar")
+        try {
+            val items = ApiClient.api.inventario(hogar.id_hogar).inventario
+            sessionStore.guardarInventario(hogar.id_hogar, items)
+            // Si mientras tanto cambió de hogar, esta respuesta ya no aplica
+            if (hogarActivo?.id_hogar == hogar.id_hogar) {
+                inventario = items
+                inventarioCargado = true
+                sinConexion = false
+            }
+        } catch (e: IOException) {
+            if (hogarActivo?.id_hogar == hogar.id_hogar) {
+                val cache = sessionStore.leerInventario(hogar.id_hogar)
+                if (cache != null) {
+                    inventario = cache
+                    inventarioCargado = true
+                }
+                sinConexion = true
+            }
+            throw e
         }
     }
 
@@ -235,8 +337,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private fun cargarCatalogo() {
         viewModelScope.launch {
             try {
-                val hogar = sesion?.hogares?.firstOrNull() ?: return@launch
-                catalogo = ApiClient.api.catalogo(hogar.id_hogar)
+                val hogar = hogarActivo ?: return@launch
+                val resultado = ApiClient.api.catalogo(hogar.id_hogar)
+                if (hogarActivo?.id_hogar == hogar.id_hogar) catalogo = resultado
             } catch (e: Exception) {
                 errorAgregar = mensaje(e)
             }
@@ -248,7 +351,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             guardando = true
             errorAgregar = null
             try {
-                val hogar = sesion?.hogares?.firstOrNull()
+                val hogar = hogarActivo
                     ?: throw IllegalStateException("Tu usuario no pertenece a ningún hogar")
                 ApiClient.api.agregarItem(
                     hogar.id_hogar,
@@ -262,21 +365,68 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             guardando = false
         }
     }
-    // ----- Estadísticas (pantalla Inicio) -----
-    var estadisticas by mutableStateOf<EstadisticasResponse?>(null)
-        private set
-    var cargandoEstadisticas by mutableStateOf(false)
-        private set
-    var errorEstadisticas by mutableStateOf<String?>(null)
-        private set
 
+    // ----- Consumir / desechar -----
+    fun cambiarEstado(idItem: Int, estado: String) {
+        viewModelScope.launch {
+            error = null
+            try {
+                val hogar = hogarActivo
+                    ?: throw IllegalStateException("Tu usuario no pertenece a ningún hogar")
+                ApiClient.api.actualizarItem(
+                    hogar.id_hogar, idItem, ActualizarItemRequest(estado)
+                )
+                inventario = inventario.filter { it.id_item != idItem }
+                sessionStore.guardarInventario(hogar.id_hogar, inventario)
+            } catch (e: Exception) {
+                error = mensaje(e)
+            }
+        }
+    }
+
+    // ----- Editar / eliminar -----
+    fun editarItem(idItem: Int, cantidad: Double, fechaCaducidad: String) {
+        viewModelScope.launch {
+            error = null
+            try {
+                val hogar = hogarActivo
+                    ?: throw IllegalStateException("Tu usuario no pertenece a ningún hogar")
+                ApiClient.api.editarItem(
+                    hogar.id_hogar, idItem, EditarItemRequest(cantidad, fechaCaducidad)
+                )
+                recargar()
+            } catch (e: Exception) {
+                error = mensaje(e)
+            }
+        }
+    }
+
+    fun eliminarItem(idItem: Int) {
+        viewModelScope.launch {
+            error = null
+            try {
+                val hogar = hogarActivo
+                    ?: throw IllegalStateException("Tu usuario no pertenece a ningún hogar")
+                ApiClient.api.eliminarItem(hogar.id_hogar, idItem)
+                inventario = inventario.filter { it.id_item != idItem }
+                sessionStore.guardarInventario(hogar.id_hogar, inventario)
+            } catch (e: Exception) {
+                error = mensaje(e)
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Estadísticas
+    // ---------------------------------------------------------------
     fun cargarEstadisticas() {
         viewModelScope.launch {
-            val hogar = sesion?.hogares?.firstOrNull() ?: return@launch
+            val hogar = hogarActivo ?: return@launch
             cargandoEstadisticas = true
             errorEstadisticas = null
             try {
-                estadisticas = ApiClient.cuentaApi.estadisticas(hogar.id_hogar)
+                val resultado = ApiClient.cuentaApi.estadisticas(hogar.id_hogar)
+                if (hogarActivo?.id_hogar == hogar.id_hogar) estadisticas = resultado
             } catch (e: Exception) {
                 errorEstadisticas = if (e is IOException)
                     "Sin conexión: no se pudieron actualizar las estadísticas"
@@ -285,18 +435,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             cargandoEstadisticas = false
         }
     }
-    // ----- Ajustes: plan, invitaciones, unirse -----
-    var plan by mutableStateOf<PlanResponse?>(null)
-        private set
-    var cargandoPlan by mutableStateOf(false)
-        private set
-    var errorAjustes by mutableStateOf<String?>(null)
-        private set
-    var avisoAjustes by mutableStateOf<String?>(null)
-        private set
-    var invitacion by mutableStateOf<InvitacionResponse?>(null)
-        private set
 
+    // ---------------------------------------------------------------
+    // Ajustes
+    // ---------------------------------------------------------------
     fun cargarPlan() {
         viewModelScope.launch {
             cargandoPlan = true
@@ -315,8 +457,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             errorAjustes = null
             avisoAjustes = null
             try {
-                val hogar = sesion?.hogares?.firstOrNull() ?: return@launch
-                invitacion = ApiClient.cuentaApi.crearInvitacion(hogar.id_hogar)
+                val hogar = hogarActivo ?: return@launch
+                val resultado = ApiClient.cuentaApi.crearInvitacion(hogar.id_hogar)
+                if (hogarActivo?.id_hogar == hogar.id_hogar) invitacion = resultado
             } catch (e: Exception) {
                 errorAjustes = mensaje(e)
             }
@@ -331,13 +474,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 val r = ApiClient.cuentaApi.unirse(UnirseRequest(codigo.trim().uppercase()))
                 val actual = sesion
                 if (actual != null && actual.hogares.none { it.id_hogar == r.id_hogar }) {
-                    val nueva = actual.copy(hogares = actual.hogares + HogarDto(r.id_hogar, "miembro"))
+                    val nueva = actual.copy(
+                        hogares = actual.hogares + HogarDto(r.id_hogar, "miembro")
+                    )
                     sesion = nueva
                     sessionStore.guardarSesion(nueva)
                 }
-                avisoAjustes = "Te uniste al hogar #${r.id_hogar}. " +
-                        "La app seguirá mostrando tu primer hogar hasta que agreguemos el selector de hogar."
-                cargarPlan()
+                // Pasa a ver el hogar al que se acaba de unir
+                cambiarHogar(r.id_hogar)
+                avisoAjustes = "Te uniste al hogar #${r.id_hogar} y ahora lo estás viendo. " +
+                        "Puedes cambiar de hogar con el selector 🏠."
             } catch (e: Exception) {
                 errorAjustes = mensaje(e)
             }
@@ -368,75 +514,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         errorAjustes = null
         avisoAjustes = null
     }
-    // ----- Consumir / desechar -----
-    fun cambiarEstado(idItem: Int, estado: String) {
-        viewModelScope.launch {
-            error = null
-            try {
-                val hogar = sesion?.hogares?.firstOrNull()
-                    ?: throw IllegalStateException("Tu usuario no pertenece a ningún hogar")
-                ApiClient.api.actualizarItem(
-                    hogar.id_hogar, idItem, ActualizarItemRequest(estado)
-                )
-                inventario = inventario.filter { it.id_item != idItem }
-                sessionStore.guardarInventario(hogar.id_hogar, inventario)
-            } catch (e: Exception) {
-                error = mensaje(e)
-            }
-        }
-    }
-    // ----- Editar / eliminar -----
-    fun editarItem(idItem: Int, cantidad: Double, fechaCaducidad: String) {
-        viewModelScope.launch {
-            error = null
-            try {
-                val hogar = sesion?.hogares?.firstOrNull()
-                    ?: throw IllegalStateException("Tu usuario no pertenece a ningún hogar")
-                ApiClient.api.editarItem(
-                    hogar.id_hogar, idItem, EditarItemRequest(cantidad, fechaCaducidad)
-                )
-                recargar()   // vuelve a pedir la lista: queda ordenada y con los días recalculados
-            } catch (e: Exception) {
-                error = mensaje(e)
-            }
-        }
-    }
 
-    fun eliminarItem(idItem: Int) {
-        viewModelScope.launch {
-            error = null
-            try {
-                val hogar = sesion?.hogares?.firstOrNull()
-                    ?: throw IllegalStateException("Tu usuario no pertenece a ningún hogar")
-                ApiClient.api.eliminarItem(hogar.id_hogar, idItem)
-                inventario = inventario.filter { it.id_item != idItem }
-                sessionStore.guardarInventario(hogar.id_hogar, inventario)
-            } catch (e: Exception) {
-                error = mensaje(e)
-            }
-        }
-    }
-
-    private suspend fun traerInventario() {
-        val hogar = sesion?.hogares?.firstOrNull()
-            ?: throw IllegalStateException("Tu usuario no pertenece a ningún hogar")
-        try {
-            val items = ApiClient.api.inventario(hogar.id_hogar).inventario
-            inventario = items
-            inventarioCargado = true
-            sinConexion = false
-            sessionStore.guardarInventario(hogar.id_hogar, items)
-        } catch (e: IOException) {
-            val cache = sessionStore.leerInventario(hogar.id_hogar)
-            if (cache != null) {
-                inventario = cache
-                inventarioCargado = true
-            }
-            sinConexion = true
-            throw e
-        }
-    }
-
+    // ---------------------------------------------------------------
+    // Mensajes de error
+    // ---------------------------------------------------------------
     private fun mensaje(e: Exception): String = when (e) {
         is HttpException -> {
             // La API manda {"error": "..."}: se lo mostramos al usuario
