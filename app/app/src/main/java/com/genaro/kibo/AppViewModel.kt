@@ -22,6 +22,8 @@ import com.genaro.kibo.data.RegistroRequest
 import com.genaro.kibo.data.SessionStore
 import com.genaro.kibo.data.UnirseRequest
 import com.genaro.kibo.data.UsuarioDto
+import com.genaro.kibo.data.NuevoProductoRequest
+import com.genaro.kibo.data.ProductoDto
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import retrofit2.HttpException
@@ -152,6 +154,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         errorAjustes = null
         avisoAjustes = null
         catalogo = null
+        resultadosBusqueda = null
+        errorProducto = null
         mostrandoAgregar = false
         error = null
         errorAgregar = null
@@ -332,6 +336,77 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun cerrarAgregar() {
         mostrandoAgregar = false
+        limpiarBusqueda()
+    }
+    // ----- Búsqueda y productos personalizados -----
+    var resultadosBusqueda by mutableStateOf<List<ProductoDto>?>(null)   // null = filtrar localmente
+        private set
+    var buscandoProducto by mutableStateOf(false)
+        private set
+    var creandoProducto by mutableStateOf(false)
+        private set
+    var errorProducto by mutableStateOf<String?>(null)
+        private set
+    private var consultaActual = ""
+
+    fun buscarProductos(texto: String) {
+        val q = texto.trim()
+        consultaActual = q
+        if (q.length < 2) {
+            resultadosBusqueda = null
+            buscandoProducto = false
+            return
+        }
+        viewModelScope.launch {
+            val hogar = hogarActivo ?: return@launch
+            buscandoProducto = true
+            try {
+                val r = ApiClient.api.buscarProductos(q, hogar.id_hogar)
+                if (consultaActual == q) resultadosBusqueda = r.coincidencias
+            } catch (e: Exception) {
+                // Sin red u otro fallo: la pantalla filtra el catálogo que ya tiene
+                if (consultaActual == q) resultadosBusqueda = null
+            }
+            if (consultaActual == q) buscandoProducto = false
+        }
+    }
+
+    fun limpiarBusqueda() {
+        consultaActual = ""
+        resultadosBusqueda = null
+        buscandoProducto = false
+        errorProducto = null
+    }
+
+    fun limpiarErrorProducto() {
+        errorProducto = null
+    }
+
+    fun crearProducto(
+        nombre: String,
+        idCategoria: Int,
+        dias: Int,
+        alCrear: (ProductoDto) -> Unit
+    ) {
+        viewModelScope.launch {
+            creandoProducto = true
+            errorProducto = null
+            try {
+                val hogar = hogarActivo
+                    ?: throw IllegalStateException("Tu usuario no pertenece a ningún hogar")
+                val r = ApiClient.api.crearProducto(
+                    hogar.id_hogar, NuevoProductoRequest(nombre, idCategoria, dias)
+                )
+                catalogo = catalogo?.let { c ->
+                    c.copy(productos = (c.productos + r.producto)
+                        .sortedBy { it.nombre.lowercase() })
+                }
+                alCrear(r.producto)
+            } catch (e: Exception) {
+                errorProducto = mensaje(e)
+            }
+            creandoProducto = false
+        }
     }
 
     private fun cargarCatalogo() {

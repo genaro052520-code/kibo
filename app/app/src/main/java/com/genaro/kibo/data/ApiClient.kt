@@ -49,6 +49,17 @@ interface ApiService {
         @Path("id") idHogar: Int,
         @Path("idItem") idItem: Int
     ): EliminarItemResponse
+    @GET("api/productos/buscar")
+    suspend fun buscarProductos(
+        @Query("q") texto: String,
+        @Query("hogar") idHogar: Int
+    ): BuscarResponse
+
+    @POST("api/hogares/{id}/productos")
+    suspend fun crearProducto(
+        @Path("id") idHogar: Int,
+        @Body body: NuevoProductoRequest
+    ): NuevoProductoResponse
 }
 
 object ApiClient {

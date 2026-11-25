@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,11 +35,15 @@ fun InventarioScreen(vm: AppViewModel) {
     var menuAbierto by remember { mutableStateOf(false) }
     var itemEditando by remember { mutableStateOf<ItemDto?>(null) }
     var itemEliminando by remember { mutableStateOf<ItemDto?>(null) }
+    var busquedaAbierta by remember { mutableStateOf(false) }
+    var consulta by remember { mutableStateOf("") }
 
     val categorias = listOf("Todos") + vm.inventario.map { it.categoria }.distinct()
     val filtroActivo = if (filtro in categorias) filtro else "Todos"
-    val visibles = if (filtroActivo == "Todos") vm.inventario
+    val porCategoria = if (filtroActivo == "Todos") vm.inventario
     else vm.inventario.filter { it.categoria == filtroActivo }
+    val visibles = if (consulta.isBlank()) porCategoria
+    else porCategoria.filter { sinAcentos(it.producto).contains(sinAcentos(consulta.trim())) }
 
     Box(
         Modifier
@@ -48,7 +53,6 @@ fun InventarioScreen(vm: AppViewModel) {
     ) {
         Column(Modifier.fillMaxSize()) {
             // ---------- Encabezado ----------
-            SelectorHogar(vm, Modifier.padding(horizontal = 20.dp))
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -61,7 +65,10 @@ fun InventarioScreen(vm: AppViewModel) {
                     Text("Inventario", fontSize = 24.sp, fontWeight = FontWeight.Bold,
                         color = KiboPurple)
                 }
-                IconButton(onClick = { /* búsqueda: más adelante */ }) {
+                IconButton(onClick = {
+                    busquedaAbierta = !busquedaAbierta
+                    if (!busquedaAbierta) consulta = ""
+                }) {
                     Icon(Icons.Default.Search, contentDescription = "Buscar",
                         tint = KiboDarkGreen, modifier = Modifier.size(30.dp))
                 }
@@ -81,6 +88,24 @@ fun InventarioScreen(vm: AppViewModel) {
                         )
                     }
                 }
+            }
+
+            SelectorHogar(vm, Modifier.padding(horizontal = 20.dp))
+
+            // ---------- Búsqueda en el inventario ----------
+            if (busquedaAbierta) {
+                OutlinedTextField(
+                    value = consulta,
+                    onValueChange = { consulta = it },
+                    label = { Text("Buscar en mi inventario") },
+                    singleLine = true,
+                    trailingIcon = {
+                        IconButton(onClick = { consulta = ""; busquedaAbierta = false }) {
+                            Icon(Icons.Default.Close, contentDescription = "Cerrar búsqueda")
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)
+                )
             }
 
             // ---------- Chips de categoría ----------
@@ -111,6 +136,7 @@ fun InventarioScreen(vm: AppViewModel) {
                             !vm.inventarioCargado && vm.sinConexion ->
                                 "Sin conexión. Conéctate para cargar tu inventario"
                             !vm.inventarioCargado -> "Cargando inventario..."
+                            consulta.isNotBlank() -> "Sin resultados para \"$consulta\""
                             else -> "No hay alimentos en esta categoría"
                         },
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -185,7 +211,6 @@ fun InventarioScreen(vm: AppViewModel) {
         }
     }
 }
-
 @Composable
 fun ChipCategoria(texto: String, seleccionado: Boolean, onClick: () -> Unit) {
     val forma = RoundedCornerShape(50)
