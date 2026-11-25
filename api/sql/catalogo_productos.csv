@@ -1,0 +1,181 @@
+nombre,categoria,dias_vida_util,alias
+Leche entera,Lácteos,7,leche|leche lala|leche alpura|leche 1 litro
+Leche deslactosada,Lácteos,7,leche sin lactosa|deslactosada|leche lala deslactosada
+Leche light,Lácteos,7,leche semidescremada|leche descremada|leche baja en grasa
+Leche condensada,Lácteos,5,lechera|leche condensada nestle
+Leche evaporada,Lácteos,5,carnation|leche carnation
+Yogur natural,Lácteos,14,yogurt natural|yogurt|yoghurt
+Yogur griego,Lácteos,14,yogurt griego
+Yogur de fresa,Lácteos,14,yogurt de fresa|yogurt fresa
+Queso fresco,Lácteos,10,queso blanco|queso ranchero
+Queso panela,Lácteos,10,panela
+Queso oaxaca,Lácteos,14,queso de hebra|quesillo|oaxaca
+Queso manchego,Lácteos,21,manchego
+Queso amarillo en rebanadas,Lácteos,21,queso en rebanadas|queso americano|queso amarillo
+Queso cotija,Lácteos,21,cotija
+Queso crema,Lácteos,14,philadelphia|queso filadelfia
+Queso cottage,Lácteos,7,cottage
+Queso parmesano,Lácteos,30,parmesano|queso rallado
+Requesón,Lácteos,5,requeson
+Crema,Lácteos,12,crema acida|crema lala
+Mantequilla,Lácteos,30,barra de mantequilla|mantequilla con sal
+Margarina,Lácteos,60,mantequilla vegetal
+Jocoque,Lácteos,10,jocoque
+Pechuga de pollo,Carnes,3,pollo|pechuga|pollo pechuga
+Muslo de pollo,Carnes,3,muslo|pierna de pollo|pierna y muslo
+Pollo entero,Carnes,3,pollo completo
+Alitas de pollo,Carnes,3,alitas|alas de pollo
+Pollo deshebrado,Carnes,4,pollo cocido|pollo para tinga
+Carne molida,Carnes,2,carne molida de res|molida|carne molida res
+Carne molida de cerdo,Carnes,2,molida de cerdo|molida de puerco
+Bistec de res,Carnes,4,bistec|bistec de res
+Arrachera,Carnes,4,arrachera marinada|carne arrachera
+Costilla de res,Carnes,4,costilla|costillas de res
+Carne de res para guisar,Carnes,4,cuete|aguja|retazo|carne para deshebrar
+Chuleta de cerdo,Carnes,4,chuletas|chuleta|chuleta de puerco
+Costilla de cerdo,Carnes,4,costillas de cerdo|costilla de puerco|costillas
+Lomo de cerdo,Carnes,4,lomo|lomo de puerco
+Carne de cerdo,Carnes,3,puerco|carne de puerco|maciza|pierna de cerdo
+Longaniza,Carnes,7,longaniza
+Chorizo,Carnes,14,chorizo rojo|chorizo argentino
+Jamón,Carnes,7,jamon de pavo|jamon virginia|jamon fud|fud
+Salchichas,Carnes,10,salchicha|salchicha de pavo|hot dog|hotdog
+Tocino,Carnes,7,bacon
+Salami,Carnes,14,salami de cerdo
+Pechuga de pavo,Carnes,7,pavo|fiambre de pavo|pechuga de pavo en rebanadas
+Mortadela,Carnes,7,mortadela
+Hígado de res,Carnes,2,higado|higado de res
+Cecina,Carnes,7,cecina|carne seca
+Filete de pescado,Pescados y mariscos,2,pescado|filete
+Tilapia,Pescados y mariscos,2,filete de tilapia
+Salmón,Pescados y mariscos,2,salmon|filete de salmon
+Camarón,Pescados y mariscos,2,camarones|camaron crudo
+Atún fresco,Pescados y mariscos,2,atun fresco|filete de atun
+Huachinango,Pescados y mariscos,2,pargo
+Mojarra,Pescados y mariscos,2,mojarra
+Pulpo,Pescados y mariscos,3,pulpo cocido
+Atún en lata abierto,Pescados y mariscos,3,atun|atun en lata|atun abierto
+Sardina en lata abierta,Pescados y mariscos,3,sardina|sardinas
+Surimi,Pescados y mariscos,7,cangrejo imitacion|palitos de surimi
+Huevo,Huevos,21,huevos|huevo blanco|huevo rojo|blanquillo|blanquillos
+Huevo cocido,Huevos,7,huevo duro|huevo hervido
+Manzana,Frutas,20,manzana roja|manzana verde|manzana gala|manzanas
+Plátano,Frutas,6,platano|banana|bananas|platanos
+Plátano macho,Frutas,5,platano macho|macho
+Fresas,Frutas,4,fresa
+Naranja,Frutas,14,naranjas
+Limón,Frutas,14,limon|limones|limon verde|lima
+Mandarina,Frutas,14,mandarinas|clementina
+Toronja,Frutas,14,pomelo
+Uva,Frutas,7,uvas|uva roja|uva verde
+Sandía,Frutas,5,sandia
+Melón,Frutas,5,melon|cantaloupe
+Papaya,Frutas,5,papaya maradol|maradol
+Mango,Frutas,5,mango ataulfo|ataulfo|manila
+Piña,Frutas,5,pina
+Pera,Frutas,7,peras|pera de agua
+Durazno,Frutas,5,duraznos|melocoton
+Ciruela,Frutas,5,ciruelas
+Kiwi,Frutas,10,kiwis
+Guayaba,Frutas,5,guayabas
+Zarzamora,Frutas,3,zarzamoras|mora
+Arándano,Frutas,7,arandanos|blueberry|blueberries
+Frambuesa,Frutas,3,frambuesas
+Aguacate,Frutas,4,aguacates|aguacate hass
+Coco,Frutas,14,coco fresco
+Tuna,Frutas,5,tunas|tuna roja
+Mamey,Frutas,4,mamey
+Granada,Frutas,20,granada roja|granadas
+Cereza,Frutas,5,cerezas
+Chabacano,Frutas,4,albaricoque
+Lechuga,Verduras,5,lechuga romana|lechuga orejona|lechuga italiana
+Jitomate,Verduras,7,tomate|tomate rojo|jitomate bola|saladet|tomates
+Zanahoria,Verduras,21,zanahorias
+Espinaca,Verduras,4,espinacas|espinaca baby
+Cebolla,Verduras,30,cebolla blanca|cebolla amarilla|cebollas
+Cebolla morada,Verduras,21,cebolla morada
+Cebolla de rabo,Verduras,7,cebollitas|cebollin|cebolla cambray|cebollita de rabo
+Ajo,Verduras,30,cabeza de ajo|ajos|diente de ajo
+Papa,Verduras,21,papas|patata|papa blanca
+Camote,Verduras,14,boniato
+Pepino,Verduras,7,pepinos
+Calabacita,Verduras,7,calabaza italiana|calabacitas|zucchini|calabacin
+Brócoli,Verduras,5,brocoli
+Coliflor,Verduras,5,coliflor
+Chayote,Verduras,10,chayotes
+Chile jalapeño,Verduras,10,jalapeno|chile jalapeno|chiles jalapeños
+Chile serrano,Verduras,10,serrano|chiles serranos
+Chile poblano,Verduras,7,poblano|chiles poblanos|chile para rajas
+Chile habanero,Verduras,10,habanero
+Cilantro,Verduras,5,manojo de cilantro
+Perejil,Verduras,5,perejil
+Epazote,Verduras,5,epazote
+Hierbabuena,Verduras,5,yerbabuena|menta
+Apio,Verduras,14,celery
+Col,Verduras,14,repollo|col verde|col morada
+Betabel,Verduras,14,remolacha|betabeles
+Rábano,Verduras,7,rabanos|rabanitos
+Elote,Verduras,4,elotes|mazorca|maiz
+Ejotes,Verduras,5,ejote|judias verdes
+Nopales,Verduras,5,nopal|nopalitos
+Champiñones,Verduras,5,champinones|hongos|setas
+Pimiento morrón,Verduras,7,pimiento|morron|pimiento rojo|pimiento verde
+Tomate verde,Verduras,10,tomatillo|tomates verdes
+Acelga,Verduras,4,acelgas
+Chícharos,Verduras,5,chicharos|guisantes|arvejas
+Berenjena,Verduras,7,berenjena
+Espárragos,Verduras,4,esparragos
+Jícama,Verduras,14,jicama
+Flor de calabaza,Verduras,2,flor de calabaza
+Calabaza,Verduras,14,calabaza de castilla
+Arroz cocinado,Sobras cocinadas,3,arroz|arroz blanco|arroz rojo|sobras de arroz
+Sopa recalentable,Sobras cocinadas,3,sopa|sopa de fideos|sopa de pasta
+Frijoles cocidos,Sobras cocinadas,4,frijoles|frijoles de la olla|frijol
+Frijoles refritos,Sobras cocinadas,4,refritos
+Pasta cocida,Sobras cocinadas,4,espagueti cocido|pasta|macarrones cocidos
+Guisado,Sobras cocinadas,3,comida|sobras de comida|comida de ayer
+Pollo guisado,Sobras cocinadas,3,pollo en salsa|guisado de pollo
+Carne guisada,Sobras cocinadas,3,guisado de res|carne en salsa|bistec en salsa
+Caldo de pollo,Sobras cocinadas,4,caldo|consome|consome de pollo
+Pozole,Sobras cocinadas,4,pozole
+Sopa de verduras,Sobras cocinadas,3,caldo de verduras|crema de verduras
+Puré de papa,Sobras cocinadas,3,pure|pure de papa
+Pizza,Sobras cocinadas,3,rebanadas de pizza|sobras de pizza
+Chilaquiles,Sobras cocinadas,2,chilaquiles
+Tamales,Sobras cocinadas,5,tamal
+Lentejas cocidas,Sobras cocinadas,4,lentejas|sopa de lentejas
+Albóndigas,Sobras cocinadas,3,albondigas|albondigas en caldillo
+Tinga de pollo,Sobras cocinadas,4,tinga
+Enchiladas,Sobras cocinadas,3,enchiladas
+Pan de caja,Panadería,7,pan blanco|pan bimbo|pan de molde|pan de sandwich
+Pan integral,Panadería,7,pan de trigo
+Bolillo,Panadería,3,bolillos|telera|birote
+Pan dulce,Panadería,3,concha|conchas|pan de dulce
+Pan para hamburguesa,Panadería,7,pan de hamburguesa|bollos
+Tortillas de maíz,Panadería,7,tortillas|tortilla|tortillas de maiz
+Tortillas de harina,Panadería,14,tortilla de harina|sobaqueras
+Jugo de naranja,Bebidas,3,jugo natural|jugo de naranja natural|jugo
+Jugo envasado abierto,Bebidas,7,jugo del valle|jugo de caja|jugo de botella
+Agua fresca,Bebidas,3,agua de jamaica|agua de horchata|agua de limon|agua de sabor
+Leche de almendra,Bebidas,7,leche vegetal|leche almendra
+Leche de soya,Bebidas,7,bebida de soya|leche de soja
+Mayonesa,Salsas y aderezos,60,mayo|mayonesa mccormick
+Mostaza,Salsas y aderezos,90,mostaza
+Catsup,Salsas y aderezos,90,ketchup|salsa catsup
+Salsa picante,Salsas y aderezos,90,valentina|tapatio|salsa botanera|salsa de botella
+Salsa verde casera,Salsas y aderezos,5,salsa verde|salsa de tomatillo
+Salsa roja casera,Salsas y aderezos,5,salsa roja|salsa de jitomate|salsa molcajeteada
+Guacamole,Salsas y aderezos,2,guac
+Mermelada,Salsas y aderezos,30,jalea|mermelada de fresa
+Aderezo ranch,Salsas y aderezos,30,ranch|aderezo|aderezo cesar
+Salsa de soya,Salsas y aderezos,180,salsa soya
+Mole,Salsas y aderezos,14,mole poblano|mole rojo
+Chiles chipotles en lata,Salsas y aderezos,14,chipotles|chipotle|chiles en adobo
+Pepinillos,Salsas y aderezos,30,encurtidos
+Aceitunas,Salsas y aderezos,14,olivas
+Hummus,Salsas y aderezos,5,humus
+Crema de cacahuate,Salsas y aderezos,90,mantequilla de cacahuate|peanut butter
+Tofu,Otros,5,queso de soya
+Gelatina,Otros,5,gelatina de sabor|jello
+Flan,Otros,4,flan napolitano
+Masa de maíz,Otros,3,masa|masa para tortillas|masa para tamales
