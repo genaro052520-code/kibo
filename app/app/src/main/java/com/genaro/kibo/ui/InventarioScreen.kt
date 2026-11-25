@@ -205,13 +205,53 @@ fun ChipCategoria(texto: String, seleccionado: Boolean, onClick: () -> Unit) {
     }
 }
 
-private fun emojiDe(categoria: String) = when (categoria) {
-    "Lácteos" -> "🥛"
-    "Carnes" -> "🥩"
-    "Frutas" -> "🍎"
-    "Verduras" -> "🥬"
-    "Sobras cocinadas" -> "🍲"
-    else -> "🍽️"
+private val emojisPorPalabra = mapOf(
+    "aguacate" to "🥑", "manzana" to "🍎", "platano" to "🍌", "fresas" to "🍓",
+    "naranja" to "🍊", "limon" to "🍋", "uva" to "🍇", "sandia" to "🍉",
+    "melon" to "🍈", "mango" to "🥭", "pina" to "🍍", "pera" to "🍐",
+    "durazno" to "🍑", "cereza" to "🍒", "coco" to "🥥", "kiwi" to "🥝",
+    "jitomate" to "🍅", "tomate" to "🍅", "zanahoria" to "🥕", "lechuga" to "🥬",
+    "espinaca" to "🥬", "acelga" to "🥬", "brocoli" to "🥦", "cebolla" to "🧅",
+    "ajo" to "🧄", "papa" to "🥔", "camote" to "🍠", "pepino" to "🥒",
+    "chile" to "🌶️", "elote" to "🌽", "champinones" to "🍄", "berenjena" to "🍆",
+    "leche" to "🥛", "yogur" to "🥛", "crema" to "🥛", "queso" to "🧀",
+    "mantequilla" to "🧈", "huevo" to "🥚",
+    "pollo" to "🍗", "pechuga" to "🍗", "alitas" to "🍗", "carne" to "🥩",
+    "bistec" to "🥩", "arrachera" to "🥩", "costilla" to "🥩", "chuleta" to "🥩",
+    "jamon" to "🍖", "tocino" to "🥓", "salchichas" to "🌭", "chorizo" to "🌭",
+    "pescado" to "🐟", "filete" to "🐟", "salmon" to "🐟", "tilapia" to "🐟",
+    "atun" to "🐟", "sardina" to "🐟", "camaron" to "🦐", "pulpo" to "🐙",
+    "arroz" to "🍚", "pasta" to "🍝", "sopa" to "🍲", "caldo" to "🍲",
+    "pozole" to "🍲", "frijoles" to "🫘", "pizza" to "🍕", "tamales" to "🫔",
+    "pan" to "🍞", "bolillo" to "🥖", "tortillas" to "🫓",
+    "jugo" to "🧃", "agua" to "🥤", "mayonesa" to "🫙", "mermelada" to "🫙",
+    "guacamole" to "🥑", "salsa" to "🌶️", "miel" to "🍯", "gelatina" to "🍮",
+    "flan" to "🍮"
+)
+
+private fun emojiDe(producto: String, categoria: String): String {
+    val palabras = java.text.Normalizer.normalize(producto, java.text.Normalizer.Form.NFD)
+        .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
+        .lowercase()
+        .split(" ")
+    for (p in palabras) {
+        for (variante in listOf(p, p.removeSuffix("s"), p.removeSuffix("es"))) {
+            emojisPorPalabra[variante]?.let { return it }
+        }
+    }
+    return when (categoria) {
+        "Lácteos" -> "🥛"
+        "Carnes" -> "🥩"
+        "Pescados y mariscos" -> "🐟"
+        "Huevos" -> "🥚"
+        "Frutas" -> "🍎"
+        "Verduras" -> "🥬"
+        "Sobras cocinadas" -> "🍲"
+        "Panadería" -> "🍞"
+        "Bebidas" -> "🥤"
+        "Salsas y aderezos" -> "🫙"
+        else -> "🍽️"
+    }
 }
 
 @Composable
@@ -247,7 +287,7 @@ fun TarjetaAlimento(
                     .background(Color(0xFFF3EEF8)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(emojiDe(item.categoria), fontSize = 44.sp)
+                Text(emojiDe(item.producto, item.categoria), fontSize = 44.sp)
             }
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
